@@ -8,7 +8,6 @@ import (
 	"github.com/sillyhatxu/convenient-utils/encryption/hash"
 	"github.com/sirupsen/logrus"
 	"io/ioutil"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -265,7 +264,7 @@ func (dbClient *DBClient) Find(sql string, args ...interface{}) ([]map[string]in
 	}
 	tx, err := db.Begin()
 	if err != nil {
-		logrus.Errorf("sqlite client get transaction error. %v", err)
+		logrus.Errorf("%s client get transaction error. %v", dbClient.DriverName, err)
 		return nil, err
 	}
 	defer tx.Commit()
@@ -327,7 +326,7 @@ func (dbClient *DBClient) Insert(sql string, args ...interface{}) (int64, error)
 	}
 	stm, err := db.Prepare(sql)
 	if err != nil {
-		logrus.Errorf("prepare sqlite error. %v", err)
+		logrus.Errorf("prepare %s error. %v", dbClient.DriverName, err)
 		return 0, err
 	}
 	defer stm.Close()
@@ -346,7 +345,7 @@ func (dbClient *DBClient) Update(sql string, args ...interface{}) (int64, error)
 	}
 	stm, err := db.Prepare(sql)
 	if err != nil {
-		logrus.Errorf("prepare sqlite error. %v", err)
+		logrus.Errorf("prepare %s error. %v", dbClient.DriverName, err)
 		return 0, err
 	}
 	defer stm.Close()
@@ -365,7 +364,7 @@ func (dbClient *DBClient) Delete(sql string, args ...interface{}) (int64, error)
 	}
 	stm, err := db.Prepare(sql)
 	if err != nil {
-		logrus.Errorf("prepare sqlite error. %v", err)
+		logrus.Errorf("prepare %s error. %v", dbClient.DriverName, err)
 		return 0, err
 	}
 	defer stm.Close()
@@ -386,7 +385,7 @@ func (dbClient *DBClient) Transaction(callback TransactionCallback) error {
 	}
 	tx, err := db.Begin()
 	if err != nil {
-		logrus.Errorf("sqlite client get transaction error. %v", err)
+		logrus.Errorf("%s client get transaction error. %v", dbClient.DriverName, err)
 		return err
 	}
 	err = callback(tx)
@@ -437,19 +436,19 @@ func (dbClient *DBClient) FindMapArray(sql string, args ...interface{}) ([]map[s
 	}
 	tx, err := db.Begin()
 	if err != nil {
-		log.Println("sqlite client get transaction error.", err)
+		logrus.Infof("%s client get transaction error. %v", dbClient.DriverName, err)
 		return nil, err
 	}
 	defer tx.Commit()
 	rows, err := tx.Query(sql, args...)
 	if err != nil {
-		log.Println("Query error.", err)
+		logrus.Infof("Query error.", err)
 		return nil, err
 	}
 	defer rows.Close()
 	columns, err := rows.Columns()
 	if err != nil {
-		log.Println("rows.Columns() error.", err)
+		logrus.Infof("rows.Columns() error. %v", err)
 		return nil, err
 	}
 	//values是每个列的值，这里获取到byte里
@@ -559,14 +558,14 @@ func (dbClient *DBClient) Count(sql string, args ...interface{}) (int64, error) 
 	}
 	tx, err := db.Begin()
 	if err != nil {
-		log.Println("sqlite client get connection error.", err)
+		logrus.Infof("%s client get connection error. %v", dbClient.DriverName, err)
 		return 0, err
 	}
 	defer tx.Commit()
 	var count int64
 	countErr := tx.QueryRow(sql, args...).Scan(&count)
 	if countErr != nil {
-		log.Println("Query count error.", err)
+		logrus.Infof("query count error. %v", err)
 		return 0, err
 	}
 	return count, nil

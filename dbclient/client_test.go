@@ -1,6 +1,7 @@
 package dbclient
 
 import (
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

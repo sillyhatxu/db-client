@@ -3,13 +3,10 @@ package dbclient
 import (
 	"database/sql"
 	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/sillyhatxu/mysql-client/utils"
 	"net/url"
 	"time"
 )
 
-//flayway open multiStatements = true
 const (
 	dsnFormat               = "%s:%s@tcp(%s:%d)/%s?%s"
 	driverName              = "mysql"
@@ -71,32 +68,32 @@ func NewDBClient(opts ...Option) (*sql.DB, error) {
 	if err != nil {
 		return nil, err
 	}
-	return pool, nil
+	return pool, pool.Ping()
 }
 
 func getMysqlDataSourceName(config Config) string {
 	params := url.Values{}
-	params.Add("allowAllFiles", utils.SetupBool(config.allowAllFiles))
-	params.Add("allowCleartextPasswords", utils.SetupBool(config.allowCleartextPasswords))
-	params.Add("allowNativePasswords", utils.SetupBool(config.allowNativePasswords))
-	params.Add("allowOldPasswords", utils.SetupBool(config.allowOldPasswords))
+	params.Add("allowAllFiles", setupBool(config.allowAllFiles))
+	params.Add("allowCleartextPasswords", setupBool(config.allowCleartextPasswords))
+	params.Add("allowNativePasswords", setupBool(config.allowNativePasswords))
+	params.Add("allowOldPasswords", setupBool(config.allowOldPasswords))
 	params.Add("charset", config.charset)
 	params.Add("collation", config.collation)
-	params.Add("clientFoundRows", utils.SetupBool(config.clientFoundRows))
-	params.Add("columnsWithAlias", utils.SetupBool(config.columnsWithAlias))
-	params.Add("interpolateParams", utils.SetupBool(config.interpolateParams))
+	params.Add("clientFoundRows", setupBool(config.clientFoundRows))
+	params.Add("columnsWithAlias", setupBool(config.columnsWithAlias))
+	params.Add("interpolateParams", setupBool(config.interpolateParams))
 	params.Add("loc", config.loc)
-	params.Add("maxAllowedPacket", utils.SetupInt64(config.maxAllowedPacket))
-	params.Add("multiStatements", utils.SetupBool(config.multiStatements))
-	params.Add("parseTime", utils.SetupBool(config.parseTime))
-	params.Add("readTimeout", utils.SetupTime(config.readTimeout))
-	params.Add("rejectReadOnly", utils.SetupBool(config.rejectReadOnly))
+	params.Add("maxAllowedPacket", setupInt64(config.maxAllowedPacket))
+	params.Add("multiStatements", setupBool(config.multiStatements))
+	params.Add("parseTime", setupBool(config.parseTime))
+	params.Add("readTimeout", setupTime(config.readTimeout))
+	params.Add("rejectReadOnly", setupBool(config.rejectReadOnly))
 	if config.serverPubKey != nil {
 		params.Add("serverPubKey", *config.serverPubKey)
 	}
-	params.Add("timeout", utils.SetupTime(config.timeout))
-	params.Add("tls", utils.SetupBool(config.tls))
-	params.Add("writeTimeout", utils.SetupTime(config.writeTimeout))
+	params.Add("timeout", setupTime(config.timeout))
+	params.Add("tls", setupBool(config.tls))
+	params.Add("writeTimeout", setupTime(config.writeTimeout))
 	return fmt.Sprintf(dsnFormat, config.userName, config.password, config.host, config.port, config.schema, params.Encode())
 }
 

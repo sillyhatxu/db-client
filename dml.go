@@ -2,6 +2,7 @@ package mysqlclient
 
 import (
 	"database/sql"
+	"github.com/sillyhatxu/db-client/decoder"
 )
 
 func (mc *MysqlClient) Insert(sql string, args ...interface{}) (int64, error) {
@@ -89,8 +90,12 @@ func (mc *MysqlClient) FindCustom(query string, fieldFunc FieldFunc, args ...int
 	return rows.Err()
 }
 
-func (mc *MysqlClient) Find(sql string, input interface{}, args ...interface{}) error {
-	//json.Marshal()
+func (mc *MysqlClient) Find(sql string, result interface{}, args ...interface{}) error {
+	return mc.FindByConfig(sql, result, decoder.DefaultConfig(), args...)
+}
+
+func (mc *MysqlClient) FindByConfig(sql string, result interface{}, config *decoder.Config, args ...interface{}) error {
+
 	rows, err := mc.GetDB().Query(sql, args...)
 	if err != nil {
 		return err
@@ -123,7 +128,7 @@ func (mc *MysqlClient) Find(sql string, input interface{}, args ...interface{}) 
 	return nil
 }
 
-//func (mc *MysqlClient) FindFirst(sql string, input interface{}, args ...interface{}) error {
+//func (mc *MyqlClient) FindFirst(sql string, input interface{}, args ...interface{}) error {
 //	if isStruct(input) {
 //		return fmt.Errorf("%v must be a struct or a struct pointer", input)
 //	}

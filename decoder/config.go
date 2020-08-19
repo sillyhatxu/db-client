@@ -23,6 +23,12 @@ type Config struct {
 	TagName string
 
 	TimeLayout string
+}
 
-	Result interface{}
+func DefaultConfig() *Config {
+	return &Config{
+		WeaklyType: true,
+		TagName:    "column",
+		TimeLayout: "2006-01-02T15:04:05Z07:00",
+	}
 }

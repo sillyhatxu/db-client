@@ -1,5 +1,9 @@
 package decoder
 
+import (
+	"reflect"
+)
+
 type Config struct {
 	// If WeaklyTypedInput is true, the decoder will make the following
 	// "weak" conversions:
@@ -31,4 +35,8 @@ func DefaultConfig() *Config {
 		TagName:    "column",
 		TimeLayout: "2006-01-02T15:04:05Z07:00",
 	}
+}
+
+func (c *Config) Decode(input interface{}, output interface{}) error {
+	return c.decode("", input, reflect.ValueOf(output).Elem())
 }

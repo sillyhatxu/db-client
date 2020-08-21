@@ -5,6 +5,15 @@ import (
 )
 
 type Config struct {
+
+	// DecodeHook, if set, will be called before any decoding and any
+	// type conversion (if WeaklyTypedInput is on). This lets you modify
+	// the values before they're set down onto the resulting struct.
+	//
+	// If an error is returned, the entire decode will fail with that
+	// error.
+	DecodeHook DecodeHookFunc
+
 	// If WeaklyTypedInput is true, the decoder will make the following
 	// "weak" conversions:
 	//
@@ -25,15 +34,13 @@ type Config struct {
 	WeaklyType bool
 
 	TagName string
-
-	TimeLayout string
 }
 
 func DefaultConfig() *Config {
 	return &Config{
 		WeaklyType: true,
 		TagName:    "column",
-		TimeLayout: "2006-01-02T15:04:05Z07:00",
+		DecodeHook: StringToTimeHookFunc("2006-01-02T15:04:05Z07:00"),
 	}
 }
 

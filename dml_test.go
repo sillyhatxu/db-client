@@ -21,7 +21,7 @@ func TestMysqlClient_Find(t *testing.T) {
 		Platform         string     `column:"platform"`
 		Age              *int       `column:"age"`
 		Amount           *float64   `column:"amount"`
-		Description      *string    `column:"desc"`
+		Desc             *string    `column:"Description"`
 		Birthday         *time.Time `column:"birthday"`
 		CreatedTime      time.Time  `column:"created_time"`
 		LastModifiedTime time.Time  `column:"last_modified_time"`

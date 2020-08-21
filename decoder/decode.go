@@ -25,16 +25,16 @@ func (c *Config) decode(name string, input interface{}, outVal reflect.Value) er
 		outVal.Set(reflect.Zero(outVal.Type()))
 		return nil
 	}
-	//if d.config.DecodeHook != nil {
-	//	// We have a DecodeHook, so let's pre-process the input.
-	//	var err error
-	//	input, err = DecodeHookExec(
-	//		d.config.DecodeHook,
-	//		inputVal.Type(), outVal.Type(), input)
-	//	if err != nil {
-	//		return fmt.Errorf("error decoding '%s': %s", name, err)
-	//	}
-	//}
+	if c.DecodeHook != nil {
+		// We have a DecodeHook, so let's pre-process the input.
+		var err error
+		input, err = DecodeHookExec(
+			c.DecodeHook,
+			inputVal.Type(), outVal.Type(), input)
+		if err != nil {
+			return fmt.Errorf("error decoding '%s': %s", name, err)
+		}
+	}
 	var err error
 	outputKind := getKind(outVal)
 	switch outputKind {

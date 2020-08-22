@@ -2,9 +2,15 @@ package mysqlclient
 
 import (
 	"database/sql"
+	"errors"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/sillyhatxu/db-client/customerrors"
 	"sync"
+	"time"
+)
+
+var (
+	CheckConfigNilError = errors.New("check config nil")
+	CheckDBPoolError    = errors.New("check db pool nil")
 )
 
 type MysqlClient struct {
@@ -17,6 +23,7 @@ func NewMysqlClient(opts ...Option) (*MysqlClient, error) {
 	config := &Config{
 		ddlPath: "",
 		flyway:  false,
+		timeout: 10 * time.Second,
 	}
 	for _, opt := range opts {
 		opt(config)
@@ -39,10 +46,10 @@ func NewMysqlClient(opts ...Option) (*MysqlClient, error) {
 
 func (mc *MysqlClient) validate() error {
 	if mc.config == nil {
-		return customerrors.CheckConfigNilError
+		return CheckConfigNilError
 	}
 	if mc.config.pool == nil {
-		return customerrors.CheckDBPoolError
+		return CheckDBPoolError
 	}
 	return mc.Ping()
 }

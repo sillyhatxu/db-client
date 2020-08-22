@@ -28,9 +28,7 @@ func (c *Config) decode(name string, input interface{}, outVal reflect.Value) er
 	if c.DecodeHook != nil {
 		// We have a DecodeHook, so let's pre-process the input.
 		var err error
-		input, err = DecodeHookExec(
-			c.DecodeHook,
-			inputVal.Type(), outVal.Type(), input)
+		input, err = DecodeHookExec(c.DecodeHook, inputVal.Type(), outVal.Type(), input)
 		if err != nil {
 			return fmt.Errorf("error decoding '%s': %s", name, err)
 		}
@@ -199,6 +197,10 @@ func (c *Config) decodeInt(name string, data interface{}, val reflect.Value) err
 			val.SetInt(0)
 		}
 	case dataKind == reflect.String && c.WeaklyType:
+		//if dataVal.String() == ""{
+		//	val.Set(nil)
+		//}
+		//check nil
 		i, err := strconv.ParseInt(dataVal.String(), 0, val.Type().Bits())
 		if err == nil {
 			val.SetInt(i)

@@ -1,8 +1,12 @@
 package mysqlclient
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 type Config struct {
+	timeout time.Duration
 	pool    *sql.DB
 	ddlPath string
 	flyway  bool
@@ -25,5 +29,11 @@ func DDLPath(ddlPath string) Option {
 func Flyway(flyway bool) Option {
 	return func(c *Config) {
 		c.flyway = flyway
+	}
+}
+
+func Timeout(timeout time.Duration) Option {
+	return func(c *Config) {
+		c.timeout = timeout
 	}
 }

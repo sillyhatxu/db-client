@@ -3,6 +3,7 @@ package mysqlclient
 import (
 	"github.com/sillyhatxu/db-client/dbclient"
 	"sync"
+	"time"
 )
 
 const (
@@ -27,7 +28,7 @@ func setup() {
 	if err != nil {
 		panic(err)
 	}
-	mysqlClient, err = NewMysqlClient(Pool(mc))
+	mysqlClient, err = NewMysqlClient(Pool(mc), Timeout(20*time.Second))
 	if err != nil {
 		panic(err)
 	}

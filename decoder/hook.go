@@ -34,10 +34,7 @@ type DecodeHookFuncKind func(reflect.Kind, reflect.Kind, interface{}) (interface
 // DecodeHookExec executes the given decode hook. This should be used
 // since it'll naturally degrade to the older backwards compatible DecodeHookFunc
 // that took reflect.Kind instead of reflect.Type.
-func DecodeHookExec(
-	raw DecodeHookFunc,
-	from reflect.Type, to reflect.Type,
-	data interface{}) (interface{}, error) {
+func DecodeHookExec(raw DecodeHookFunc, from reflect.Type, to reflect.Type, data interface{}) (interface{}, error) {
 	switch f := typedDecodeHook(raw).(type) {
 	case DecodeHookFuncType:
 		return f(from, to, data)
@@ -74,10 +71,7 @@ func typedDecodeHook(h DecodeHookFunc) DecodeHookFunc {
 // StringToTimeHookFunc returns a DecodeHookFunc that converts
 // strings to time.Time.
 func StringToTimeHookFunc(layout string) DecodeHookFunc {
-	return func(
-		f reflect.Type,
-		t reflect.Type,
-		data interface{}) (interface{}, error) {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
 		if f.Kind() != reflect.String {
 			return data, nil
 		}
@@ -85,6 +79,22 @@ func StringToTimeHookFunc(layout string) DecodeHookFunc {
 			return data, nil
 		}
 		// Convert it by parsing
+		return time.Parse(layout, data.(string))
+	}
+}
+
+func StringToTimeHookAllowNilFunc(layout string) DecodeHookFunc {
+	return func(f reflect.Type, t reflect.Type, data interface{}) (interface{}, error) {
+		if f.Kind() != reflect.String {
+			return data, nil
+		}
+		if t != reflect.TypeOf(time.Time{}) {
+			return data, nil
+		}
+		// Convert it by parsing
+		if data.(string) == "" {
+			return nil, nil
+		}
 		return time.Parse(layout, data.(string))
 	}
 }

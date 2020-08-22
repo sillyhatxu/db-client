@@ -1,17 +1,36 @@
 package mysqlclient
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"github.com/sillyhatxu/db-client/decoder"
 )
 
-func (mc *MysqlClient) Insert(sql string, args ...interface{}) (int64, error) {
+var TimeOutError = errors.New("database connect timeout")
+
+func (mc *MysqlClient) getContext() context.Context {
+	ctx, _ := context.WithTimeout(context.Background(), mc.config.timeout)
+	return ctx
+}
+
+func (mc *MysqlClient) Exec(sql string, args ...interface{}) (sql.Result, error) {
 	stm, err := mc.GetDB().Prepare(sql)
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	defer stm.Close()
-	result, err := stm.Exec(args...)
+	result, err := stm.ExecContext(mc.getContext(), args...)
+	if err != nil && err == context.DeadlineExceeded {
+		return nil, TimeOutError
+	} else if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (mc *MysqlClient) Insert(sql string, args ...interface{}) (int64, error) {
+	result, err := mc.Exec(sql, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -19,12 +38,7 @@ func (mc *MysqlClient) Insert(sql string, args ...interface{}) (int64, error) {
 }
 
 func (mc *MysqlClient) Update(sql string, args ...interface{}) (int64, error) {
-	stm, err := mc.GetDB().Prepare(sql)
-	if err != nil {
-		return 0, err
-	}
-	defer stm.Close()
-	result, err := stm.Exec(args...)
+	result, err := mc.Exec(sql, args...)
 	if err != nil {
 		return 0, err
 	}
@@ -32,45 +46,38 @@ func (mc *MysqlClient) Update(sql string, args ...interface{}) (int64, error) {
 }
 
 func (mc *MysqlClient) Delete(sql string, args ...interface{}) (int64, error) {
-	stm, err := mc.GetDB().Prepare(sql)
-	if err != nil {
-		return 0, err
-	}
-	defer stm.Close()
-	result, err := stm.Exec(args...)
+	result, err := mc.Exec(sql, args...)
 	if err != nil {
 		return 0, err
 	}
 	return result.RowsAffected()
 }
 
-type TransactionCallback func(*sql.Tx) error
+func (mc *MysqlClient) Count(sql string, args ...interface{}) (int64, error) {
+	var count int64
+	err := mc.GetDB().QueryRowContext(mc.getContext(), sql, args...).Scan(&count)
+	if err != nil && err == context.DeadlineExceeded {
+		return 0, TimeOutError
+	} else if err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+type TransactionCallback func(context.Context, *sql.Tx) error
 
 func (mc *MysqlClient) Transaction(callback TransactionCallback) error {
 	tx, err := mc.GetTransaction()
 	if err != nil {
 		return err
 	}
-	err = callback(tx)
+	ctx, _ := context.WithTimeout(context.Background(), mc.config.timeout)
+	err = callback(ctx, tx)
 	if err != nil {
-		tx.Rollback()
+		_ = tx.Rollback()
 		return err
 	}
 	return tx.Commit()
-}
-
-func (mc *MysqlClient) Count(sql string, args ...interface{}) (int64, error) {
-	tx, err := mc.GetTransaction()
-	if err != nil {
-		return 0, err
-	}
-	defer tx.Commit()
-	var count int64
-	err = tx.QueryRow(sql, args...).Scan(&count)
-	if err != nil {
-		return 0, err
-	}
-	return count, nil
 }
 
 type FieldFunc func(rows *sql.Rows) error
@@ -91,47 +98,29 @@ func (mc *MysqlClient) FindCustom(query string, fieldFunc FieldFunc, args ...int
 }
 
 func (mc *MysqlClient) Find(sql string, output interface{}, args ...interface{}) error {
-	result, err := mc.FindByConfig(sql, args...)
+	result, err := mc.FindMapArray(sql, args...)
 	if err != nil {
 		return err
 	}
 	return decoder.DefaultConfig().Decode(result, output)
 }
 
-func (mc *MysqlClient) FindByConfig(sql string, args ...interface{}) ([]map[string]interface{}, error) {
-	//rows, err := mc.GetDB().Query(sql, args...)
-	//if err != nil {
-	//	return err
-	//}
-	//defer rows.Close()
-	//colNames, err := rows.Columns()
-	//if err != nil {
-	//	return err
-	//}
-	//cols := make([]interface{}, len(colNames))
-	//colPtrs := make([]interface{}, len(colNames))
-	//for i := 0; i < len(colNames); i++ {
-	//	colPtrs[i] = &cols[i]
-	//}
-	//var array []map[string]interface{}
-	//var myMap = make(map[string]interface{})
-	//for rows.Next() {
-	//	err = rows.Scan(colPtrs...)
-	//	if err != nil {
-	//		return err
-	//	}
-	//	for i, col := range cols {
-	//		myMap[colNames[i]] = col
-	//	}
-	//	array = append(array, myMap)
-	//	//for key, val := range myMap {
-	//	//	fmt.Println("Key:", key, "Value Type:", reflect.TypeOf(val))
-	//	//}
-	//}
-	//return nil
-
-	rows, err := mc.GetDB().Query(sql, args...)
+func (mc *MysqlClient) FindFirst(sql string, output interface{}, args ...interface{}) error {
+	array, err := mc.FindMapArray(sql, args...)
 	if err != nil {
+		return err
+	}
+	if array == nil || len(array) == 0 {
+		return nil
+	}
+	return decoder.DefaultConfig().Decode(array[0], output)
+}
+
+func (mc *MysqlClient) FindMapArray(sql string, args ...interface{}) ([]map[string]interface{}, error) {
+	rows, err := mc.GetDB().QueryContext(mc.getContext(), sql, args...)
+	if err != nil && err == context.DeadlineExceeded {
+		return nil, TimeOutError
+	} else if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
@@ -162,27 +151,3 @@ func (mc *MysqlClient) FindByConfig(sql string, args ...interface{}) ([]map[stri
 	}
 	return results, nil
 }
-
-//func (mc *MyqlClient) FindFirst(sql string, input interface{}, args ...interface{}) error {
-//	if isStruct(input) {
-//		return fmt.Errorf("%v must be a struct or a struct pointer", input)
-//	}
-//	result, err := mc.FindMapFirst(sql, args...)
-//	if err != nil {
-//		return err
-//	}
-//	config := &mapstructure.DecoderConfig{
-//		DecodeHook:       mapstructure.StringToTimeHookFunc("2006-01-02T15:04:05Z07:00"),
-//		WeaklyTypedInput: true,
-//		Result:           input,
-//	}
-//	decoder, err := mapstructure.NewDecoder(config)
-//	if err != nil {
-//		return err
-//	}
-//	err = decoder.Decode(result)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}

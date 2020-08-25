@@ -33,7 +33,9 @@ func TestMysqlClient_Insert(t *testing.T) {
 	//TODO struct to map
 	sql, args, err := builder.BuildInsert("user_info", data)
 	assert.Nil(t, err)
-
+	id, err := mysqlClient.Insert(sql, args...)
+	assert.Nil(t, err)
+	assert.EqualValues(t, 1, id)
 }
 
 func TestMysqlClient_Find(t *testing.T) {

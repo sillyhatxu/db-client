@@ -4,6 +4,13 @@ import (
 	"reflect"
 )
 
+var (
+	// DefaultTagName is the default tag name for struct fields which provides
+	// a more granular to tweak certain structs. Lookup the necessary functions
+	// for more info.
+	DefaultTagName = "column" // struct's field default tag name
+)
+
 type Config struct {
 
 	// DecodeHook, if set, will be called before any decoding and any
@@ -39,7 +46,7 @@ type Config struct {
 func DefaultConfig() *Config {
 	return &Config{
 		WeaklyType: true,
-		TagName:    "column",
+		TagName:    DefaultTagName,
 		DecodeHook: StringToTimeHookFunc("2006-01-02T15:04:05Z07:00"),
 	}
 }

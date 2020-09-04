@@ -55,7 +55,10 @@ func TestMysqlClient_Find(t *testing.T) {
 	once.Do(setup)
 	var userArray []User
 	sql := "select * from user"
+	//mysqlClient.Find(sql, &userArray)
+	//TODO fix nil bug
 	err := mysqlClient.Find(sql, &userArray)
 	assert.Nil(t, err)
-	assert.EqualValues(t, 5, len(userArray))
+
+	assert.EqualValues(t, 100, len(userArray))
 }

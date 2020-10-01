@@ -57,6 +57,7 @@ func TestMysqlClient_Find(t *testing.T) {
 	sql := "select * from user"
 	//mysqlClient.Find(sql, &userArray)
 	//TODO fix nil bug
+	//TODO I can't fix this bug
 	err := mysqlClient.Find(sql, &userArray)
 	assert.Nil(t, err)
 

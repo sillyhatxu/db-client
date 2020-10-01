@@ -79,6 +79,9 @@ func StringToTimeHookFunc(layout string) DecodeHookFunc {
 			return data, nil
 		}
 		// Convert it by parsing
+		if data == "" {
+			return nil, nil
+		}
 		return time.Parse(layout, data.(string))
 	}
 }
